@@ -61,9 +61,42 @@ export async function interpretMedicalReport(extractedText: string): Promise<Int
       const json = safeJsonParse(out);
       return InterpretationSchema.parse(json);
     } catch (err) {
-      return demoInterpretation(extractedText, {
-        note: "HuggingFace AI failed to return valid JSON. Showing a demo interpretation."
-      });
+      // If the model can chat but struggles to output strict JSON, fall back to markdown-only interpretation
+      // (still AI-generated, just less structured).
+      try {
+        const md = await hfGenerateText({
+          prompt: [
+            "You are an empathetic, safety-first medical assistant (not a doctor).",
+            "Write a patient-friendly explanation of the following medical report in SIMPLE English.",
+            "Do not diagnose. Provide possibilities, red flags, and when to consult a clinician.",
+            "Output MARKDOWN only (no JSON). Use headings and bullet points.",
+            "",
+            "Report text:",
+            extractedText.slice(0, 12000)
+          ].join("\n"),
+          maxNewTokens: 700,
+          temperature: 0.2
+        });
+
+        const findings = inferAbnormalFindings(extractedText).slice(0, 12);
+        return InterpretationSchema.parse({
+          abnormalFindings: findings,
+          explanationMarkdown: md.trim() || "AI explanation was empty. Please try again with a clearer report.",
+          whatToDo: [],
+          whatToAvoid: [],
+          foodToEat: [],
+          foodToAvoid: [],
+          lifestyle: [],
+          exercise: [],
+          reasons: [],
+          consultDoctorWhen: [],
+          disclaimer: "Educational only; not medical advice or diagnosis."
+        });
+      } catch {
+        return demoInterpretation(extractedText, {
+          note: "HuggingFace AI failed to interpret this report. Showing a demo interpretation."
+        });
+      }
     }
   }
 

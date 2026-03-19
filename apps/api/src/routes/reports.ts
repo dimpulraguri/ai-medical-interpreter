@@ -107,37 +107,23 @@ reportRoutes.post(
 
       report.status = "ready";
       report.extractedTextEnc = encryptJson(text);
-      report.aiExplanationEnc = encryptJson(
-        [
-          interpretation.explanationMarkdown,
-          "",
-          "## What to do",
-          ...interpretation.whatToDo.map((x) => `- ${x}`),
-          "",
-          "## What to avoid",
-          ...interpretation.whatToAvoid.map((x) => `- ${x}`),
-          "",
-          "## Food to eat",
-          ...interpretation.foodToEat.map((x) => `- ${x}`),
-          "",
-          "## Food to avoid",
-          ...interpretation.foodToAvoid.map((x) => `- ${x}`),
-          "",
-          "## Lifestyle",
-          ...interpretation.lifestyle.map((x) => `- ${x}`),
-          "",
-          "## Exercise",
-          ...interpretation.exercise.map((x) => `- ${x}`),
-          "",
-          "## Possible reasons",
-          ...interpretation.reasons.map((x) => `- ${x}`),
-          "",
-          "## Consult a real doctor when",
-          ...interpretation.consultDoctorWhen.map((x) => `- ${x}`),
-          "",
-          `**Disclaimer:** ${interpretation.disclaimer}`
-        ].join("\n")
-      );
+
+      const mdParts: string[] = [interpretation.explanationMarkdown];
+      const section = (title: string, items: string[]) => {
+        if (!items?.length) return;
+        mdParts.push("", `## ${title}`, ...items.map((x) => `- ${x}`));
+      };
+      section("What to do", interpretation.whatToDo);
+      section("What to avoid", interpretation.whatToAvoid);
+      section("Food to eat", interpretation.foodToEat);
+      section("Food to avoid", interpretation.foodToAvoid);
+      section("Lifestyle", interpretation.lifestyle);
+      section("Exercise", interpretation.exercise);
+      section("Possible reasons", interpretation.reasons);
+      section("Consult a real doctor when", interpretation.consultDoctorWhen);
+      mdParts.push("", `**Disclaimer:** ${interpretation.disclaimer}`);
+
+      report.aiExplanationEnc = encryptJson(mdParts.join("\n"));
       report.abnormalFindingsEnc = encryptJson(interpretation.abnormalFindings);
       await report.save();
 
