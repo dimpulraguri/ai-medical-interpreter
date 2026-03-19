@@ -45,7 +45,8 @@ export function createApp() {
     const aiReady =
       env.AI_MODE === "demo" ||
       env.AI_MODE === "off" ||
-      (env.AI_MODE === "openai" && Boolean(env.OPENAI_API_KEY));
+      (env.AI_MODE === "openai" && Boolean(env.OPENAI_API_KEY)) ||
+      (env.AI_MODE === "huggingface" && Boolean(env.HF_API_KEY));
     const ready = mongoReady && aiReady;
 
     res.status(ready ? 200 : 503).json({

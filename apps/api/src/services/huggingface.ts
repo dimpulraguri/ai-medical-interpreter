@@ -1,13 +1,5 @@
 import { env } from "../config/env.js";
 
-function modelPath(repoId: string) {
-  // Preserve "/" between namespace and model name while safely encoding each segment.
-  return repoId
-    .split("/")
-    .map((seg) => encodeURIComponent(seg))
-    .join("/");
-}
-
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
@@ -23,17 +15,17 @@ export async function hfGenerateText(input: {
     throw err;
   }
 
-  const url = `https://api-inference.huggingface.co/models/${modelPath(env.HF_MODEL)}`;
+  // Hugging Face deprecated `api-inference.huggingface.co`; use the router OpenAI-compatible API.
+  // Docs: https://huggingface.co/inference-api/
+  const url = "https://router.huggingface.co/v1/chat/completions";
   const body = JSON.stringify({
-    inputs: input.prompt,
-    parameters: {
-      max_new_tokens: Math.max(64, Math.min(900, input.maxNewTokens ?? 500)),
-      temperature: input.temperature ?? 0.2,
-      return_full_text: false
-    }
+    model: env.HF_MODEL,
+    messages: [{ role: "user", content: input.prompt }],
+    temperature: input.temperature ?? 0.2,
+    max_tokens: Math.max(64, Math.min(900, input.maxNewTokens ?? 500))
   });
 
-  // HF may return 503 while the model "warms up". Retry a couple of times.
+  // Router may return 503 while capacity is warming up. Retry a couple of times.
   let lastStatus: number | null = null;
   let lastText = "";
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -51,10 +43,9 @@ export async function hfGenerateText(input: {
     lastText = text;
 
     if (res.ok) {
-      // HF Inference returns an array like [{ generated_text: "..." }]
       try {
         const json = JSON.parse(text) as any;
-        const generated = json?.[0]?.generated_text;
+        const generated = json?.choices?.[0]?.message?.content;
         if (typeof generated === "string") return generated.trim();
       } catch {
         // fall through

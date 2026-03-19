@@ -24,7 +24,8 @@ const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().default(""),
   OPENAI_MODEL: z.string().default("gpt-4.1-mini"),
   HF_API_KEY: emptyToUndefined(z.string().optional()),
-  HF_MODEL: z.string().default("google/flan-t5-large"),
+  // HuggingFace Router model name (OpenAI-compatible). Example: deepseek-ai/DeepSeek-R1:fastest
+  HF_MODEL: z.string().default("deepseek-ai/DeepSeek-R1:fastest"),
   AI_MODE: AiModeSchema.default("openai"),
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   ALLOW_LOCAL_STORAGE_IN_PROD: z.coerce.boolean().default(false),

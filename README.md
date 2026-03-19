@@ -56,7 +56,7 @@ npm install --cache .npm-cache
 
 If you don’t have OpenAI credits/quota right now: set `AI_MODE=demo` in `apps/api/.env` to make uploads + chat work without external AI calls.
 
-Alternative: use HuggingFace Inference API by setting `AI_MODE=huggingface` and `HF_API_KEY` (see `apps/api/.env.example`).
+Alternative: use HuggingFace Router (OpenAI-compatible) by setting `AI_MODE=huggingface`, `HF_API_KEY`, and `HF_MODEL` (see `apps/api/.env.example`).
 
 ### 3) Start MongoDB
 
