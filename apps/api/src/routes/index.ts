@@ -11,6 +11,10 @@ import { adminRoutes } from "./admin.js";
 
 export const routes = Router();
 
+routes.get("/", (_req, res) => {
+  res.json({ ok: true, name: "ai-medical-api", version: "0.1.0" });
+});
+
 routes.use("/auth", authRoutes);
 routes.use("/reports", reportRoutes);
 routes.use("/chat", chatRoutes);

@@ -37,6 +37,8 @@ export function createApp() {
   );
   app.use(pinoHttp({ logger }));
 
+  // Render/other platforms may ping `/` to detect a healthy service.
+  app.get("/", (_req, res) => res.json({ ok: true, service: "ai-medical-api" }));
   app.get("/health", (_req, res) => res.json({ ok: true }));
   app.get("/health/ready", (_req, res) => {
     const mongoReady = mongoose.connection.readyState === 1;
