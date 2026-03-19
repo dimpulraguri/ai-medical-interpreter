@@ -49,6 +49,20 @@ const EnvSchema = z.object({
       message: "MONGODB_URI must be set to a real MongoDB URI in production"
     });
   }
+  if (val.STORAGE_DRIVER === "s3") {
+    const missing: string[] = [];
+    if (!val.S3_BUCKET) missing.push("S3_BUCKET");
+    if (!val.S3_REGION) missing.push("S3_REGION");
+    if (!val.S3_ACCESS_KEY_ID) missing.push("S3_ACCESS_KEY_ID");
+    if (!val.S3_SECRET_ACCESS_KEY) missing.push("S3_SECRET_ACCESS_KEY");
+    if (missing.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["STORAGE_DRIVER"],
+        message: `Missing required S3 config: ${missing.join(", ")}`
+      });
+    }
+  }
   if (val.NODE_ENV === "production" && val.STORAGE_DRIVER === "local" && !val.ALLOW_LOCAL_STORAGE_IN_PROD) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

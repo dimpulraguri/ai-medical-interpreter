@@ -90,7 +90,10 @@ npm run dev
 
 1. Create a Node service from `apps/api`.
 2. Add environment variables from `apps/api/.env.example`:
-   - `MONGODB_URI`, `OPENAI_API_KEY`, `DATA_ENCRYPTION_KEY_BASE64`, JWT secrets, `CORS_ORIGIN` (set to your Vercel URL)
+   - `MONGODB_URI`, `DATA_ENCRYPTION_KEY_BASE64`, JWT secrets, `CORS_ORIGIN` (set to your Vercel URL)
+   - AI (pick one):
+     - HuggingFace: `AI_MODE=huggingface`, `HF_API_KEY`, `HF_MODEL`
+     - OpenAI: `AI_MODE=openai`, `OPENAI_API_KEY`
 3. Build command:
 
 ```bash
@@ -103,7 +106,7 @@ npm install --cache .npm-cache && npm -w @ami/shared run build && npm -w @ami/ap
 npm -w @ami/api run start
 ```
 
-> Note: Render’s filesystem is ephemeral. For production uploads, use `STORAGE_DRIVER=s3` (or explicitly set `ALLOW_LOCAL_STORAGE_IN_PROD=true` if you accept the data-loss risk on redeploy).
+> Note: Render’s filesystem is ephemeral. For production uploads, use `STORAGE_DRIVER=s3`. If you prefer local storage, attach a Render Disk and set `LOCAL_UPLOAD_DIR=/data/uploads` + `ALLOW_LOCAL_STORAGE_IN_PROD=true`.
 
 ---
 

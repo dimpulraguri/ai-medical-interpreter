@@ -12,6 +12,10 @@ import { notFound, errorHandler } from "./middleware/errors.js";
 
 export function createApp() {
   const app = express();
+  if (env.NODE_ENV === "production") {
+    // Required for correct req.ip and rate limiting behind Render/other proxies.
+    app.set("trust proxy", 1);
+  }
 
   app.use(
     cors(
