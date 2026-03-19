@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 import { useChat } from "./useChat";
+import { SafetyBanner } from "@/components/SafetyBanner";
 
 export function ChatWidget() {
   const [open, setOpen] = React.useState(false);
@@ -33,14 +34,14 @@ export function ChatWidget() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700"
+        className="print-hidden fixed bottom-20 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 lg:bottom-5"
         aria-label="Open AI Doctor chat"
       >
         <MessageCircle className="h-6 w-6" />
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/30 p-4" onClick={() => setOpen(false)}>
+        <div className="print-hidden fixed inset-0 z-50 bg-black/30 p-4" onClick={() => setOpen(false)}>
           <Card
             className="mx-auto flex h-[80vh] w-full max-w-lg flex-col p-0"
             onClick={(e) => e.stopPropagation()}
@@ -56,6 +57,9 @@ export function ChatWidget() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
+              <div className="mb-3">
+                <SafetyBanner text={messages.map((m) => m.content).join("\n")} />
+              </div>
               {loading && <div className="text-sm text-slate-500">Loading chat…</div>}
               <div className="space-y-2">
                 {messages.map((m) => (
@@ -94,4 +98,3 @@ export function ChatWidget() {
     </>
   );
 }
-

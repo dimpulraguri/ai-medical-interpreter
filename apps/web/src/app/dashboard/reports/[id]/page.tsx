@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { SafetyBanner } from "@/components/SafetyBanner";
 
 type Finding = { parameter: string; value: string; flag: "low" | "high" | "critical"; note?: string };
 
@@ -27,10 +30,19 @@ export default function ReportDetailPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">{report?.filename ?? "Report"}</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-300">AI explanation + abnormal highlights.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold">{report?.filename ?? "Report"}</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">AI explanation + abnormal highlights.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href={`/dashboard/reports/${params.id}/summary`}>
+            <Button variant="secondary">Doctor summary</Button>
+          </Link>
+        </div>
       </div>
+
+      <SafetyBanner findings={findings} text={String(report?.aiExplanation ?? "")} />
 
       {report?.status !== "ready" && (
         <Card>
@@ -79,4 +91,3 @@ export default function ReportDetailPage() {
     </div>
   );
 }
-

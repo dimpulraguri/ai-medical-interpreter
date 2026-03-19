@@ -9,7 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 export function TopNav() {
   const { user, logout } = useAuth();
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+    <header className="print-hidden sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <span className="rounded-xl bg-brand-600 p-2 text-white">
@@ -44,4 +44,3 @@ export function TopNav() {
     </header>
   );
 }
-
