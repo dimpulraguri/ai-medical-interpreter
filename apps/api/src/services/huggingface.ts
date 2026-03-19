@@ -43,14 +43,35 @@ export async function hfGenerateText(input: {
     lastText = text;
 
     if (res.ok) {
+      let json: any = null;
       try {
-        const json = JSON.parse(text) as any;
-        const generated = json?.choices?.[0]?.message?.content;
-        if (typeof generated === "string") return generated.trim();
+        json = JSON.parse(text) as any;
       } catch {
-        // fall through
+        return String(text ?? "").trim();
       }
-      return String(text ?? "").trim();
+
+      if (json?.error || json?.message) {
+        const err = new Error(`HF router error: ${String(json?.error || json?.message)}`);
+        (err as any).statusCode = 503;
+        (err as any).details = JSON.stringify(json).slice(0, 500);
+        throw err;
+      }
+
+      const choice0 = json?.choices?.[0];
+      const generated =
+        choice0?.message?.content ??
+        choice0?.delta?.content ??
+        choice0?.text ??
+        json?.generated_text ??
+        json?.[0]?.generated_text;
+
+      if (typeof generated === "string" && generated.trim().length) return generated.trim();
+
+      const finishReason = typeof choice0?.finish_reason === "string" ? choice0.finish_reason : "unknown";
+      const err = new Error(`HF returned an empty reply (finish_reason=${finishReason}).`);
+      (err as any).statusCode = 503;
+      (err as any).details = JSON.stringify(json).slice(0, 500);
+      throw err;
     }
 
     if (res.status === 503 && attempt < 2) {
