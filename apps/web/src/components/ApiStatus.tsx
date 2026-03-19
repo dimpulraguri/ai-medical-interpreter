@@ -27,12 +27,16 @@ export function ApiStatus() {
       .catch((e: any) => {
         if (!alive) return;
         setStatus("fail");
-        const msg =
+        const raw =
           e?.name === "AbortError"
             ? "Timed out"
             : typeof e?.message === "string"
               ? e.message
               : "Request failed";
+        const msg =
+          raw.toLowerCase().includes("failed to fetch") || raw.toLowerCase().includes("networkerror")
+            ? "Network error (often CORS or wrong URL)"
+            : raw;
         setDetail(msg);
       })
       .finally(() => window.clearTimeout(t));
