@@ -52,8 +52,13 @@ export async function doctorChatReply(input: {
       .filter(Boolean)
       .join("\n");
 
-    const out = await hfGenerateText({ prompt, maxNewTokens: 350, temperature: 0.4 });
-    return out.trim() || demoChatReply({ userMessage, context, note: "HuggingFace returned an empty reply." });
+    try {
+      const out = await hfGenerateText({ prompt, maxNewTokens: 350, temperature: 0.4 });
+      return out.trim() || demoChatReply({ userMessage, context, note: "HuggingFace returned an empty reply." });
+    } catch (err: any) {
+      const detail = typeof err?.message === "string" ? err.message : "HuggingFace failed";
+      return demoChatReply({ userMessage, context, note: `${detail} Answering in demo mode.` });
+    }
   }
 
   const openai = requireOpenAI();
