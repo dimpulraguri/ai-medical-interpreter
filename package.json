@@ -1,0 +1,30 @@
+{
+  "name": "ai-medical-interpreter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Medical Report Interpreter - Your 24/7 Virtual Doctor",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --success=first -n web,api -c blue,green \"npm -w @ami/web run dev\" \"npm -w @ami/api run dev\"",
+    "dev:web": "npm -w @ami/web run dev",
+    "dev:api": "npm -w @ami/api run dev",
+    "build": "npm -w @ami/shared run build && npm -w @ami/api run build && npm -w @ami/web run build",
+    "setup:env": "node scripts/setup-env.mjs",
+    "test:mongo": "node scripts/test-mongo.mjs",
+    "clean": "node scripts/clean.mjs",
+    "lint": "npm -w @ami/web run lint",
+    "test": "npm -w @ami/api run test",
+    "format": "prettier -w ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "prettier": "^3.3.3"
+  }
+}

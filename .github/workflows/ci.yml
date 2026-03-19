@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8090
+        run: npm run build
+      - name: Lint (web)
+        run: npm run lint
+      - name: Test (api smoke)
+        run: npm run test
+
