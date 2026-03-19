@@ -17,7 +17,7 @@ const Schema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  acceptTerms: z.boolean().refine((v) => v === true, { message: "Please accept the Terms & Privacy Policy" })
+  acceptTerms: z.boolean().optional()
 });
 type Form = z.infer<typeof Schema>;
 
@@ -28,11 +28,16 @@ export default function SignupPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { isSubmitting, errors }
-  } = useForm<Form>({ resolver: zodResolver(Schema) });
+  } = useForm<Form>({ resolver: zodResolver(Schema), defaultValues: { acceptTerms: false } });
 
   async function onSubmit(values: Form) {
     setServerError(null);
+    if (!values.acceptTerms) {
+      setError("acceptTerms", { type: "manual", message: "Please accept the Terms & Privacy Policy" });
+      return;
+    }
     try {
       await signup(values.name, values.email, values.password, values.acceptTerms);
       router.push("/dashboard");

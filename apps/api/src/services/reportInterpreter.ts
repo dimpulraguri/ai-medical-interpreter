@@ -2,6 +2,7 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { requireOpenAI } from "./openaiClient.js";
 import OpenAI from "openai";
+import { hfGenerateText } from "./huggingface.js";
 
 const InterpretationSchema = z.object({
   abnormalFindings: z
@@ -36,6 +37,34 @@ export async function interpretMedicalReport(extractedText: string): Promise<Int
   }
   if (env.AI_MODE === "demo") {
     return demoInterpretation(extractedText);
+  }
+  if (env.AI_MODE === "huggingface") {
+    const instructions =
+      "You are an empathetic, safety-first medical assistant (not a doctor). " +
+      "Interpret lab reports and explain them in simple English. " +
+      "Do not provide diagnoses. Provide possibilities and suggest consulting a clinician. " +
+      "Highlight abnormal values only when clearly present; if uncertain, say unclear. " +
+      "Provide low-risk lifestyle guidance, red flags, and when to consult a real doctor. " +
+      "Return STRICT JSON only with keys: abnormalFindings, explanationMarkdown, whatToDo, whatToAvoid, foodToEat, foodToAvoid, lifestyle, exercise, reasons, consultDoctorWhen, disclaimer.";
+
+    const prompt = [
+      instructions,
+      "",
+      "Return JSON only.",
+      "",
+      "Report text:",
+      extractedText.slice(0, 12000)
+    ].join("\n");
+
+    try {
+      const out = await hfGenerateText({ prompt, maxNewTokens: 700, temperature: 0.2 });
+      const json = safeJsonParse(out);
+      return InterpretationSchema.parse(json);
+    } catch (err) {
+      return demoInterpretation(extractedText, {
+        note: "HuggingFace AI failed to return valid JSON. Showing a demo interpretation."
+      });
+    }
   }
 
   const openai = requireOpenAI();

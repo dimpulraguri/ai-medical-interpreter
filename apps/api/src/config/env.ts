@@ -3,6 +3,14 @@ import { z } from "zod";
 const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((v) => (v === "" ? undefined : v), schema);
 
+const AiModeSchema = z.preprocess((v) => {
+  if (typeof v !== "string") return v;
+  // Backwards/UX aliases:
+  // - "live" is used by some deployment guides; treat it as HF here.
+  if (v.toLowerCase() === "live") return "huggingface";
+  return v;
+}, z.enum(["openai", "huggingface", "demo", "off"]));
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(8080),
@@ -15,7 +23,9 @@ const EnvSchema = z.object({
   DATA_ENCRYPTION_KEY_BASE64: z.string().min(44),
   OPENAI_API_KEY: z.string().default(""),
   OPENAI_MODEL: z.string().default("gpt-4.1-mini"),
-  AI_MODE: z.enum(["openai", "demo", "off"]).default("openai"),
+  HF_API_KEY: emptyToUndefined(z.string().optional()),
+  HF_MODEL: z.string().default("google/flan-t5-large"),
+  AI_MODE: AiModeSchema.default("openai"),
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   ALLOW_LOCAL_STORAGE_IN_PROD: z.coerce.boolean().default(false),
   LOCAL_UPLOAD_DIR: emptyToUndefined(z.string().optional()),
@@ -42,6 +52,13 @@ const EnvSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["STORAGE_DRIVER"],
       message: "In production, set STORAGE_DRIVER=s3 (recommended) or set ALLOW_LOCAL_STORAGE_IN_PROD=true"
+    });
+  }
+  if (val.AI_MODE === "huggingface" && !val.HF_API_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["HF_API_KEY"],
+      message: "HF_API_KEY must be set when AI_MODE=huggingface"
     });
   }
 });

@@ -1,6 +1,7 @@
 import { env } from "../config/env.js";
 import { requireOpenAI } from "./openaiClient.js";
 import OpenAI from "openai";
+import { hfGenerateText } from "./huggingface.js";
 
 export async function doctorChatReply(input: {
   userMessage: string;
@@ -16,6 +17,43 @@ export async function doctorChatReply(input: {
   }
   if (env.AI_MODE === "demo") {
     return demoChatReply({ userMessage, context });
+  }
+  if (env.AI_MODE === "huggingface") {
+    const system = [
+      "You are an empathetic, safety-first medical assistant (not a doctor).",
+      "You provide: simple explanations, self-care guidance, when-to-seek-care advice, and medication-safety reminders.",
+      "Ask clarifying questions when needed (age, duration, pregnancy, chronic diseases, meds, allergies).",
+      "Never provide definitive diagnosis. Never provide dosing changes. Encourage consulting a clinician for emergencies."
+    ].join(" ");
+
+    const contextText =
+      context?.recentAbnormalFindings != null
+        ? `Recent lab abnormal findings (may be incomplete): ${JSON.stringify(context.recentAbnormalFindings).slice(
+            0,
+            600
+          )}`
+        : "";
+
+    const history = recent
+      .slice(-8)
+      .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n");
+
+    const prompt = [
+      system,
+      contextText,
+      "",
+      "Conversation (most recent last):",
+      history,
+      "",
+      `USER: ${userMessage}`,
+      "ASSISTANT:"
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const out = await hfGenerateText({ prompt, maxNewTokens: 350, temperature: 0.4 });
+    return out.trim() || demoChatReply({ userMessage, context, note: "HuggingFace returned an empty reply." });
   }
 
   const openai = requireOpenAI();
