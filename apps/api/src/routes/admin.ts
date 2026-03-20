@@ -73,3 +73,30 @@ adminRoutes.get(
     });
   })
 );
+
+adminRoutes.get(
+  "/metrics",
+  asyncHandler(async (_req: AuthedRequest, res) => {
+    const now = new Date();
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const [totalUsers, totalReports, signups24h, signups7d, logins24h, logins7d] = await Promise.all([
+      User.countDocuments({}),
+      Report.countDocuments({}),
+      AuditLog.countDocuments({ event: "auth.signup", createdAt: { $gte: last24h } }),
+      AuditLog.countDocuments({ event: "auth.signup", createdAt: { $gte: last7d } }),
+      AuditLog.countDocuments({ event: "auth.login", createdAt: { $gte: last24h } }),
+      AuditLog.countDocuments({ event: "auth.login", createdAt: { $gte: last7d } })
+    ]);
+
+    res.json({
+      totals: {
+        users: totalUsers,
+        reports: totalReports
+      },
+      signups: { last24h: signups24h, last7d: signups7d },
+      logins: { last24h: logins24h, last7d: logins7d }
+    });
+  })
+);

@@ -17,6 +17,11 @@ type AdminAudit = {
   status: number;
   createdAt: string;
 };
+type AdminMetrics = {
+  totals: { users: number; reports: number };
+  signups: { last24h: number; last7d: number };
+  logins: { last24h: number; last7d: number };
+};
 
 export default function AdminPage() {
   const usersQ = useQuery({
@@ -31,6 +36,10 @@ export default function AdminPage() {
     queryKey: ["admin", "audit"],
     queryFn: async () => (await api.get("/admin/audit?limit=200")).data.audit as AdminAudit[]
   });
+  const metricsQ = useQuery({
+    queryKey: ["admin", "metrics"],
+    queryFn: async () => (await api.get("/admin/metrics")).data as AdminMetrics
+  });
 
   return (
     <AdminOnly>
@@ -38,6 +47,29 @@ export default function AdminPage() {
         <div>
           <h1 className="text-xl font-semibold">Admin</h1>
           <p className="text-sm text-slate-600 dark:text-slate-300">User list and recent uploads (metadata only).</p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Card>
+            <div className="text-xs text-slate-500">Total users</div>
+            <div className="mt-2 text-2xl font-semibold">{metricsQ.data?.totals.users ?? "—"}</div>
+          </Card>
+          <Card>
+            <div className="text-xs text-slate-500">Total reports</div>
+            <div className="mt-2 text-2xl font-semibold">{metricsQ.data?.totals.reports ?? "—"}</div>
+          </Card>
+          <Card>
+            <div className="text-xs text-slate-500">Logins (24h / 7d)</div>
+            <div className="mt-2 text-2xl font-semibold">
+              {metricsQ.data ? `${metricsQ.data.logins.last24h} / ${metricsQ.data.logins.last7d}` : "—"}
+            </div>
+          </Card>
+          <Card>
+            <div className="text-xs text-slate-500">Signups (24h / 7d)</div>
+            <div className="mt-2 text-2xl font-semibold">
+              {metricsQ.data ? `${metricsQ.data.signups.last24h} / ${metricsQ.data.signups.last7d}` : "—"}
+            </div>
+          </Card>
         </div>
 
         <Card>
