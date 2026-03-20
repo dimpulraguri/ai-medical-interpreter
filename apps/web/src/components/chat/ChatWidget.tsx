@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 import { useChat } from "./useChat";
-import { SafetyBanner } from "@/components/SafetyBanner";
 
 export function ChatWidget() {
   const [open, setOpen] = React.useState(false);
@@ -57,9 +56,6 @@ export function ChatWidget() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="mb-3">
-                <SafetyBanner text={messages.map((m) => m.content).join("\n")} />
-              </div>
               {loading && <div className="text-sm text-slate-500">Loading chat…</div>}
               <div className="space-y-2">
                 {messages.map((m) => (

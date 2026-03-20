@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { useChat } from "@/components/chat/useChat";
-import { SafetyBanner } from "@/components/SafetyBanner";
 
 export default function ChatPage() {
   const [text, setText] = React.useState("");
@@ -38,9 +37,6 @@ export default function ChatPage() {
       </div>
 
       <Card className="flex h-[70vh] flex-col p-0">
-        <div className="p-3">
-          <SafetyBanner text={messages.map((m) => m.content).join("\n")} />
-        </div>
         <div className="flex-1 overflow-y-auto p-4">
           {loading && <div className="text-sm text-slate-500">Loading…</div>}
           <div className="space-y-2">
