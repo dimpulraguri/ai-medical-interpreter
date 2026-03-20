@@ -53,6 +53,14 @@ authRoutes.post(
     const ok = await user.verifyPassword(password);
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
+    const adminEmails = (env.ADMIN_EMAILS ?? "")
+      .split(",")
+      .map((x) => x.trim().toLowerCase())
+      .filter(Boolean);
+    if (adminEmails.includes(user.email.toLowerCase()) && user.role !== "admin") {
+      user.role = "admin";
+    }
+
     const refreshToken = signRefreshToken(user._id.toString());
     user.setRefreshToken(refreshToken);
     await user.save();
