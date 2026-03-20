@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ type Finding = { parameter: string; value: string; flag: "low" | "high" | "criti
 
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
+  const [chatLinked, setChatLinked] = React.useState(false);
   const q = useQuery({
     queryKey: ["report", params.id],
     queryFn: async () => (await api.get(`/reports/${params.id}`)).data.report as any
@@ -36,11 +38,21 @@ export default function ReportDetailPage() {
           <p className="text-sm text-slate-600 dark:text-slate-300">AI explanation + abnormal highlights.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              localStorage.setItem("ami_chat_report_id", params.id);
+              setChatLinked(true);
+            }}
+          >
+            Use in chat
+          </Button>
           <Link href={`/dashboard/reports/${params.id}/summary`}>
             <Button variant="secondary">Doctor summary</Button>
           </Link>
         </div>
       </div>
+      {chatLinked && <div className="text-sm text-emerald-600">Chat will use this report for context.</div>}
 
       <SafetyBanner findings={findings} text={String(report?.aiExplanation ?? "")} />
 

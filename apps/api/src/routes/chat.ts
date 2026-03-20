@@ -4,6 +4,7 @@ import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ChatThread } from "../models/ChatThread.js";
 import { Report } from "../models/Report.js";
+import { isValidObjectId } from "mongoose";
 import { decryptJson, encryptJson } from "../services/encryption.js";
 import { doctorChatReply } from "../services/chatDoctor.js";
 import { writeAuditLog } from "../services/audit.js";
@@ -30,7 +31,7 @@ chatRoutes.post(
   "/send",
   requireAuth,
   asyncHandler(async (req: AuthedRequest, res) => {
-    const { message } = ChatSendSchema.parse(req.body);
+    const { message, reportId } = ChatSendSchema.parse(req.body);
     const thread = (await ChatThread.findOne({ userId: req.user!.id })) ?? (await ChatThread.create({ userId: req.user!.id, messages: [] }));
 
     const recent = thread.messages.slice(-20).map((m) => ({
@@ -38,7 +39,12 @@ chatRoutes.post(
       content: decryptJson<string>(m.contentEnc) ?? ""
     }));
 
-    const latestReport = await Report.findOne({ userId: req.user!.id, status: "ready" })
+    const reportQuery =
+      reportId && isValidObjectId(reportId)
+        ? { _id: reportId, userId: req.user!.id, status: "ready" }
+        : { userId: req.user!.id, status: "ready" };
+
+    const latestReport = await Report.findOne(reportQuery)
       .sort({ createdAt: -1 })
       .select({ abnormalFindingsEnc: 1, extractedTextEnc: 1, aiExplanationEnc: 1, filename: 1, createdAt: 1 });
     const recentAbnormalFindings = latestReport ? decryptJson(latestReport.abnormalFindingsEnc) : null;

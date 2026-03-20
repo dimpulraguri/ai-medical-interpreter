@@ -35,5 +35,6 @@ export const CreateMedicineScheduleSchema = z.object({
 });
 
 export const ChatSendSchema = z.object({
-  message: z.string().min(1).max(2000)
+  message: z.string().min(1).max(2000),
+  reportId: z.string().min(1).max(128).optional()
 });

@@ -26,7 +26,8 @@ export function useChat() {
     const temp: ChatMsg = { id: `tmp_${Date.now()}`, role: "user", content: text, createdAt: new Date().toISOString() };
     setMessages((m) => [...m, temp]);
     try {
-      const r = await api.post("/chat/send", { message: text });
+      const reportId = typeof window !== "undefined" ? localStorage.getItem("ami_chat_report_id") : null;
+      const r = await api.post("/chat/send", { message: text, reportId: reportId || undefined });
       const reply: ChatMsg = { id: `asst_${Date.now()}`, role: "assistant", content: r.data.message, createdAt: r.data.createdAt };
       setMessages((m) => [...m, reply]);
     } catch (err) {
