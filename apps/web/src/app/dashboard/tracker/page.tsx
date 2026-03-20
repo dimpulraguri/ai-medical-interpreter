@@ -36,6 +36,20 @@ export default function TrackerPage() {
   const [heightCm, setHeightCm] = React.useState<number>(170);
   const [weightKg, setWeightKg] = React.useState<number>(lastWeight ?? 70);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem("ami_height_cm");
+    if (!v) return;
+    const num = Number(v);
+    if (Number.isFinite(num) && num > 0) setHeightCm(num);
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!Number.isFinite(heightCm) || heightCm <= 0) return;
+    window.localStorage.setItem("ami_height_cm", String(heightCm));
+  }, [heightCm]);
+
   const bmi = heightCm > 0 ? weightKg / Math.pow(heightCm / 100, 2) : 0;
   const bmiLabel = bmi < 18.5 ? "Underweight" : bmi < 25 ? "Normal" : bmi < 30 ? "Overweight" : "Obesity";
 
@@ -107,4 +121,3 @@ export default function TrackerPage() {
     </div>
   );
 }
-

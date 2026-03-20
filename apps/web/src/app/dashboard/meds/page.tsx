@@ -39,7 +39,8 @@ export default function MedicinesPage() {
   });
   const adherenceQ = useQuery({
     queryKey: ["meds", "adherence"],
-    queryFn: async () => (await api.get("/meds/adherence?days=14")).data as { adherencePct: number | null }
+    queryFn: async () =>
+      (await api.get("/meds/adherence?days=14")).data as { adherencePct: number | null; taken: number; planned: number }
   });
 
   const createM = useMutation({
@@ -86,8 +87,17 @@ export default function MedicinesPage() {
       <Card>
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold">Adherence (last 14 days)</div>
-          <Badge variant="info">{adherenceQ.data?.adherencePct != null ? `${adherenceQ.data.adherencePct}%` : "—"}</Badge>
+          <Badge variant="info">
+            {adherenceQ.data?.adherencePct != null
+              ? `${adherenceQ.data.adherencePct}% (${adherenceQ.data.taken}/${adherenceQ.data.planned})`
+              : "—"}
+          </Badge>
         </div>
+        {adherenceQ.data && adherenceQ.data.planned > 0 && adherenceQ.data.taken > adherenceQ.data.planned ? (
+          <div className="mt-2 text-xs text-rose-600">
+            Warning: logged taken doses exceed scheduled doses. This usually means duplicate taps.
+          </div>
+        ) : null}
       </Card>
 
       <Card>
@@ -158,6 +168,11 @@ export default function MedicinesPage() {
           ))}
           {!listQ.data?.length && <div className="text-sm text-slate-500">No medicine schedules yet.</div>}
         </div>
+        {adherenceQ.data && adherenceQ.data.planned > 0 && adherenceQ.data.taken > adherenceQ.data.planned ? (
+          <div className="mt-2 text-xs text-rose-600">
+            Warning: logged taken doses exceed scheduled doses. This usually means duplicate taps.
+          </div>
+        ) : null}
       </Card>
     </div>
   );

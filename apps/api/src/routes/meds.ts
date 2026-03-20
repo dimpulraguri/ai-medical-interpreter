@@ -74,13 +74,13 @@ medsRoutes.post(
   requireAuth,
   asyncHandler(async (req: AuthedRequest, res) => {
     const body = LogSchema.parse(req.body);
-    const log = await MedicineLog.create({
-      userId: req.user!.id,
-      scheduleId: body.scheduleId,
-      plannedAt: new Date(body.plannedAt),
-      status: body.status,
-      loggedAt: new Date()
-    });
+    const plannedAt = new Date(body.plannedAt);
+    plannedAt.setSeconds(0, 0); // normalize to minute
+    const log = await MedicineLog.findOneAndUpdate(
+      { userId: req.user!.id, scheduleId: body.scheduleId, plannedAt },
+      { $set: { status: body.status, loggedAt: new Date() } },
+      { upsert: true, new: true }
+    );
     void writeAuditLog({ req, event: "meds.log", status: 201, userId: req.user!.id, meta: { scheduleId: body.scheduleId, status: body.status } });
     res.status(201).json({ id: log._id.toString() });
   })
@@ -98,12 +98,15 @@ medsRoutes.get(
     const schedules = await MedicineSchedule.find({ userId: req.user!.id, enabled: true });
     const logs = await MedicineLog.find({ userId: req.user!.id, plannedAt: { $gte: from, $lte: now } }).select({
       status: 1,
-      plannedAt: 1
+      plannedAt: 1,
+      scheduleId: 1,
+      loggedAt: 1
     });
 
-    const taken = logs.filter((l) => l.status === "taken").length;
+    const taken = countUniqueTaken(logs);
     const planned = plannedDosesWithinRange(schedules, from, now);
-    const pct = planned > 0 ? Math.round((taken / planned) * 100) : null;
+    const pctRaw = planned > 0 ? Math.round((taken / planned) * 100) : null;
+    const pct = pctRaw == null ? null : Math.min(100, pctRaw);
 
     res.json({ adherencePct: pct, planned, taken, days });
   })
@@ -132,4 +135,20 @@ function plannedDosesWithinRange(
     planned += days * s.times.length;
   }
   return planned;
+}
+
+function countUniqueTaken(
+  logs: Array<{ scheduleId: any; plannedAt: Date; status: "taken" | "skipped"; loggedAt: Date }>
+) {
+  const map = new Map<string, { status: "taken" | "skipped"; loggedAt: Date }>();
+  for (const l of logs) {
+    const key = `${l.scheduleId.toString()}_${l.plannedAt.toISOString()}`;
+    const existing = map.get(key);
+    if (!existing || l.loggedAt > existing.loggedAt) {
+      map.set(key, { status: l.status, loggedAt: l.loggedAt });
+    }
+  }
+  let taken = 0;
+  for (const v of map.values()) if (v.status === "taken") taken += 1;
+  return taken;
 }

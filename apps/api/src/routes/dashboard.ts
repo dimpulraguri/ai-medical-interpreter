@@ -53,9 +53,9 @@ async function adherence14d(userId: string) {
   from.setDate(from.getDate() - 14);
   const [schedules, logs] = await Promise.all([
     MedicineSchedule.find({ userId, enabled: true }).select({ startDate: 1, durationDays: 1, times: 1, enabled: 1 }),
-    MedicineLog.find({ userId, plannedAt: { $gte: from, $lte: now } }).select({ status: 1 })
+    MedicineLog.find({ userId, plannedAt: { $gte: from, $lte: now } }).select({ status: 1, plannedAt: 1, scheduleId: 1, loggedAt: 1 })
   ]);
-  const taken = logs.filter((l) => l.status === "taken").length;
+  const taken = countUniqueTaken(logs as any);
   const planned = schedules.reduce((acc, s) => {
     const start = new Date(`${s.startDate}T00:00:00`);
     const end = new Date(start);
@@ -66,6 +66,22 @@ async function adherence14d(userId: string) {
     const days = Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000));
     return acc + days * s.times.length;
   }, 0);
-  return planned > 0 ? Math.round((taken / planned) * 100) : null;
+  const pctRaw = planned > 0 ? Math.round((taken / planned) * 100) : null;
+  return pctRaw == null ? null : Math.min(100, pctRaw);
 }
 
+function countUniqueTaken(
+  logs: Array<{ scheduleId: any; plannedAt: Date; status: "taken" | "skipped"; loggedAt: Date }>
+) {
+  const map = new Map<string, { status: "taken" | "skipped"; loggedAt: Date }>();
+  for (const l of logs) {
+    const key = `${l.scheduleId.toString()}_${l.plannedAt.toISOString()}`;
+    const existing = map.get(key);
+    if (!existing || l.loggedAt > existing.loggedAt) {
+      map.set(key, { status: l.status, loggedAt: l.loggedAt });
+    }
+  }
+  let taken = 0;
+  for (const v of map.values()) if (v.status === "taken") taken += 1;
+  return taken;
+}
