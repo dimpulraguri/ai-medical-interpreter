@@ -54,10 +54,28 @@ export async function notifyUser(userId: string, payload: { title: string; body:
           tokens: user.deviceTokens,
           notification: { title: payload.title, body: payload.body }
         })
+        .then(async (r) => {
+          const badTokens: string[] = [];
+          r.responses.forEach((resp, idx) => {
+            if (resp.success) return;
+            const code = (resp.error as any)?.code as string | undefined;
+            // Remove permanently invalid tokens.
+            if (
+              code === "messaging/registration-token-not-registered" ||
+              code === "messaging/invalid-registration-token"
+            ) {
+              const token = user.deviceTokens?.[idx];
+              if (token) badTokens.push(token);
+            }
+          });
+          if (badTokens.length) {
+            await User.updateOne({ _id: userId }, { $pull: { deviceTokens: { $in: badTokens } } });
+            logger.info({ removed: badTokens.length }, "removed invalid fcm tokens");
+          }
+        })
         .catch((err) => logger.warn({ err }, "fcm failed"))
     );
   }
 
   await Promise.all(tasks);
 }
-

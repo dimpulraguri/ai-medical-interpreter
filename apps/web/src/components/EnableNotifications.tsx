@@ -10,6 +10,11 @@ import { getFcmToken } from "@/lib/firebase";
 export function EnableNotifications() {
   const [status, setStatus] = React.useState<"idle" | "working" | "enabled" | "unsupported" | "denied">("idle");
   const vapid = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+  const missingCfg =
+    !process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+    !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    !process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ||
+    !process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
 
   async function enable() {
     if (!vapid) return;
@@ -29,7 +34,7 @@ export function EnableNotifications() {
     }
   }
 
-  if (!vapid) return null;
+  if (!vapid || missingCfg) return null;
 
   return (
     <Card>

@@ -116,6 +116,19 @@ npm -w @ami/api run start
 - Backend can send pushes if `FIREBASE_SERVICE_ACCOUNT_JSON` is configured.
 - The browser token is registered by clicking **Enable Push Notifications** on the Reminders page.
 
+### Required env vars
+
+**Frontend (Vercel):** set the Firebase web config + VAPID key (see `apps/web/.env.example`).
+
+**Backend (Render):** set:
+- `FIREBASE_SERVICE_ACCOUNT_JSON` (service account JSON in a single line)
+
+### Quick test
+
+Go to **Dashboard → Reminders**:
+- Click **Enable** under Push notifications
+- Click **Send test** to verify delivery
+
 ---
 
 ## Notes / limitations (MVP)

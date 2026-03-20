@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { EnableNotifications } from "@/components/EnableNotifications";
+import { getApiErrorMessage } from "@/lib/errors";
 
 type Reminder = {
   id: string;
@@ -33,6 +34,8 @@ type Form = z.infer<typeof Schema>;
 
 export default function RemindersPage() {
   const qc = useQueryClient();
+  const [testStatus, setTestStatus] = React.useState<string | null>(null);
+  const [testing, setTesting] = React.useState(false);
   const listQ = useQuery({
     queryKey: ["reminders"],
     queryFn: async () => (await api.get("/reminders")).data.reminders as Reminder[]
@@ -125,6 +128,40 @@ export default function RemindersPage() {
       </Card>
 
       <EnableNotifications />
+
+      <Card>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm font-semibold">Test notification</div>
+            <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              After enabling push on this device, send a test notification.
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            disabled={testing}
+            onClick={async () => {
+              setTestStatus(null);
+              setTesting(true);
+              try {
+                await api.post("/notifications/test");
+                setTestStatus("sent");
+              } catch (err) {
+                setTestStatus(getApiErrorMessage(err));
+              } finally {
+                setTesting(false);
+              }
+            }}
+          >
+            {testing ? "Sendingâ€¦" : "Send test"}
+          </Button>
+        </div>
+        {testStatus === "sent" ? (
+          <div className="mt-2 text-sm text-emerald-600">Sent. If you donâ€™t see it, check browser notification settings.</div>
+        ) : testStatus ? (
+          <div className="mt-2 text-sm text-rose-600">{testStatus}</div>
+        ) : null}
+      </Card>
 
       <Card>
         <div className="text-sm font-semibold">Your reminders</div>
