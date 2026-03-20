@@ -93,17 +93,16 @@ export default function HomePage() {
             </p>
           </Card>
           <Card>
-            <h2 className="text-lg font-semibold">Contact</h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              Questions or feedback? Email{" "}
-              <a className="text-brand-700 underline dark:text-brand-300" href="mailto:support@example.com">
-                support@example.com
-              </a>
-            </p>
+            <h2 className="text-lg font-semibold">How it works</h2>
+            <ol className="mt-2 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+              <li>1. Upload a report (PDF or photo)</li>
+              <li>2. We extract text and highlight abnormal values</li>
+              <li>3. Get a simple explanation and next-step guidance</li>
+              <li>4. Track reminders and stay consistent</li>
+            </ol>
           </Card>
         </div>
       </section>
     </main>
   );
 }
-
