@@ -8,7 +8,6 @@ import { dashboardRoutes } from "./dashboard.js";
 import { metricsRoutes } from "./metrics.js";
 import { profileRoutes } from "./profile.js";
 import { adminRoutes } from "./admin.js";
-import { notificationsRoutes } from "./notifications.js";
 
 export const routes = Router();
 
@@ -24,5 +23,4 @@ routes.use("/meds", medsRoutes);
 routes.use("/dashboard", dashboardRoutes);
 routes.use("/metrics", metricsRoutes);
 routes.use("/profile", profileRoutes);
-routes.use("/notifications", notificationsRoutes);
 routes.use("/admin", adminRoutes);

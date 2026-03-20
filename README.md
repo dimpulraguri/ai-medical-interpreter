@@ -8,7 +8,7 @@ Mobile-first, fully responsive web app that lets users upload medical reports (P
 - **Backend:** Node.js + Express + MongoDB (Mongoose)
 - **AI:** OpenAI API (Responses API)
 - **OCR:** `pdf-parse` (digital PDFs) + `tesseract.js` (images)
-- **Notifications:** Email via SendGrid (optional) + Push via Firebase Cloud Messaging (optional)
+- **Notifications:** Email via SendGrid (optional)
 
 ## Security / HIPAA-style structure (practical)
 
@@ -109,25 +109,6 @@ npm -w @ami/api run start
 > Note: Render’s filesystem is ephemeral. For production uploads, use `STORAGE_DRIVER=s3`. If you prefer local storage, attach a Render Disk and set `LOCAL_UPLOAD_DIR=/data/uploads` + `ALLOW_LOCAL_STORAGE_IN_PROD=true`.
 
 ---
-
-## Push notifications setup (optional)
-
-- Web app uses FCM; it registers a service worker at `/firebase-messaging-sw.js`.
-- Backend can send pushes if `FIREBASE_SERVICE_ACCOUNT_JSON` is configured.
-- The browser token is registered by clicking **Enable Push Notifications** on the Reminders page.
-
-### Required env vars
-
-**Frontend (Vercel):** set the Firebase web config + VAPID key (see `apps/web/.env.example`).
-
-**Backend (Render):** set:
-- `FIREBASE_SERVICE_ACCOUNT_JSON` (service account JSON in a single line)
-
-### Quick test
-
-Go to **Dashboard → Reminders**:
-- Click **Enable** under Push notifications
-- Click **Send test** to verify delivery
 
 ---
 

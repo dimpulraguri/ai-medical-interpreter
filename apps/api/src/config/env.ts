@@ -39,7 +39,6 @@ const EnvSchema = z.object({
   PDF_OCR_MAX_PAGES: z.coerce.number().int().min(1).max(10).default(3),
   SENDGRID_API_KEY: emptyToUndefined(z.string().optional()),
   EMAIL_FROM: emptyToUndefined(z.string().email().optional()),
-  FIREBASE_SERVICE_ACCOUNT_JSON: emptyToUndefined(z.string().optional()),
   ADMIN_EMAILS: emptyToUndefined(z.string().optional())
 }).superRefine((val, ctx) => {
   if (val.NODE_ENV === "production" && (val.MONGODB_URI === "memory" || !val.MONGODB_URI)) {

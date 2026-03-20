@@ -118,15 +118,3 @@ authRoutes.post(
     res.json({ ok: true });
   })
 );
-
-authRoutes.post(
-  "/device-token",
-  requireAuth,
-  asyncHandler(async (req: AuthedRequest, res) => {
-    const token = String(req.body?.token ?? "").trim();
-    if (!token) return res.status(400).json({ error: "Missing token" });
-    await User.updateOne({ _id: req.user!.id }, { $addToSet: { deviceTokens: token } });
-    void writeAuditLog({ req, event: "auth.device_token", status: 200, userId: req.user!.id });
-    res.json({ ok: true });
-  })
-);
