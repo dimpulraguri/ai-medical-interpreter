@@ -40,11 +40,19 @@ chatRoutes.post(
 
     const latestReport = await Report.findOne({ userId: req.user!.id, status: "ready" })
       .sort({ createdAt: -1 })
-      .select({ abnormalFindingsEnc: 1 });
+      .select({ abnormalFindingsEnc: 1, extractedTextEnc: 1, aiExplanationEnc: 1, filename: 1, createdAt: 1 });
     const recentAbnormalFindings = latestReport ? decryptJson(latestReport.abnormalFindingsEnc) : null;
+    const recentReportSummary = latestReport
+      ? {
+          filename: latestReport.filename,
+          createdAt: latestReport.createdAt.toISOString(),
+          aiExplanation: decryptJson<string>(latestReport.aiExplanationEnc) ?? "",
+          extractedText: decryptJson<string>(latestReport.extractedTextEnc) ?? ""
+        }
+      : null;
 
     thread.messages.push({ role: "user", contentEnc: encryptJson(message) });
-    const reply = await doctorChatReply({ userMessage: message, recent, context: { recentAbnormalFindings } });
+    const reply = await doctorChatReply({ userMessage: message, recent, context: { recentAbnormalFindings, recentReportSummary } });
     thread.messages.push({ role: "assistant", contentEnc: encryptJson(reply || "I’m here with you—can you share a bit more detail?") });
     await thread.save();
 

@@ -6,7 +6,7 @@ import { hfGenerateText } from "./huggingface.js";
 export async function doctorChatReply(input: {
   userMessage: string;
   recent: Array<{ role: "user" | "assistant"; content: string }>;
-  context?: { recentAbnormalFindings?: unknown };
+  context?: { recentAbnormalFindings?: unknown; recentReportSummary?: { filename: string; createdAt: string; aiExplanation: string; extractedText: string } | null };
 }) {
   const { userMessage, recent, context } = input;
 
@@ -70,15 +70,24 @@ export async function doctorChatReply(input: {
     "If severe red flags: advise urgent care / emergency services."
   ].join(" ");
 
-  const contextText =
+  const abnormalText =
     context?.recentAbnormalFindings != null
       ? `Recent lab abnormal findings (may be incomplete): ${JSON.stringify(context.recentAbnormalFindings).slice(
           0,
           1000
         )}`
       : "";
+  const reportText = context?.recentReportSummary
+    ? [
+        `Latest report: ${context.recentReportSummary.filename} (${context.recentReportSummary.createdAt})`,
+        context.recentReportSummary.aiExplanation ? `AI summary: ${context.recentReportSummary.aiExplanation.slice(0, 1200)}` : "",
+        context.recentReportSummary.extractedText ? `Raw report text (excerpt): ${context.recentReportSummary.extractedText.slice(0, 800)}` : ""
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
 
-  const instructions = [system, contextText].filter(Boolean).join("\n");
+  const instructions = [system, abnormalText, reportText].filter(Boolean).join("\n");
 
   try {
     const res = await openai.responses.create({
