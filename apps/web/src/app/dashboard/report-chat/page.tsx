@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/errors";
 
 type ChatMsg = { id: string; role: "user" | "assistant"; content: string; createdAt: string };
+type ReportItem = { id: string; filename: string; status: string; createdAt: string };
 
 export default function ReportChatPage() {
   const [text, setText] = React.useState("");
@@ -22,6 +23,11 @@ export default function ReportChatPage() {
   React.useEffect(() => {
     setReportId(localStorage.getItem("ami_chat_report_id"));
   }, []);
+
+  const reportsQ = useQuery({
+    queryKey: ["reports"],
+    queryFn: async () => (await api.get("/reports")).data.reports as ReportItem[]
+  });
 
   const reportQ = useQuery({
     queryKey: ["report", reportId],
@@ -70,11 +76,27 @@ export default function ReportChatPage() {
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Ask questions about a specific report only (separate from doctor chat).
         </p>
-        <div className="mt-2 text-sm">
-          Selected report:{" "}
-          <span className="font-medium">{reportQ.data?.filename ?? "None"}</span>{" "}
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <div className="text-slate-600 dark:text-slate-300">Selected report:</div>
+          <select
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm dark:border-slate-800 dark:bg-slate-950"
+            value={reportId ?? ""}
+            onChange={(e) => {
+              const id = e.target.value || null;
+              setReportId(id);
+              if (id) localStorage.setItem("ami_chat_report_id", id);
+              else localStorage.removeItem("ami_chat_report_id");
+            }}
+          >
+            <option value="">Choose a report</option>
+            {(reportsQ.data ?? []).map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.filename} {r.status !== "ready" ? `(${r.status})` : ""}
+              </option>
+            ))}
+          </select>
           <Link href="/dashboard/reports" className="text-brand-700 underline">
-            Choose report
+            Manage reports
           </Link>
         </div>
         {!reportId && (
