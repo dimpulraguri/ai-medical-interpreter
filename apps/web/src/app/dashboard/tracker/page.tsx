@@ -37,6 +37,13 @@ export default function TrackerPage() {
   const [weightKg, setWeightKg] = React.useState<number>(lastWeight ?? 70);
 
   React.useEffect(() => {
+    if (lastWeight == null) return;
+    if (!Number.isFinite(weightKg) || weightKg === 70) {
+      setWeightKg(lastWeight);
+    }
+  }, [lastWeight]);
+
+  React.useEffect(() => {
     if (typeof window === "undefined") return;
     const v = window.localStorage.getItem("ami_height_cm");
     if (!v) return;
