@@ -36,6 +36,28 @@ export default function ReportChatPage() {
   });
 
   React.useEffect(() => {
+    if (!reportId) {
+      setMessages([]);
+      return;
+    }
+    const raw = localStorage.getItem(`ami_report_chat_${reportId}`);
+    if (raw) {
+      try {
+        setMessages(JSON.parse(raw) as ChatMsg[]);
+      } catch {
+        setMessages([]);
+      }
+    } else {
+      setMessages([]);
+    }
+  }, [reportId]);
+
+  React.useEffect(() => {
+    if (!reportId) return;
+    localStorage.setItem(`ami_report_chat_${reportId}`, JSON.stringify(messages.slice(-50)));
+  }, [messages, reportId]);
+
+  React.useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
 
@@ -105,6 +127,26 @@ export default function ReportChatPage() {
           </div>
         )}
       </div>
+
+      {reportId && reportQ.data && (
+        <Card className="space-y-2">
+          <div className="text-sm font-semibold">Selected report context</div>
+          <div className="text-sm text-slate-600 dark:text-slate-300">
+            {reportQ.data.filename} • {new Date(reportQ.data.createdAt).toLocaleString()}
+          </div>
+          {Array.isArray(reportQ.data.abnormalFindings) && reportQ.data.abnormalFindings.length > 0 && (
+            <div className="text-xs text-slate-500">
+              Abnormal findings: {reportQ.data.abnormalFindings.length}
+            </div>
+          )}
+          {reportQ.data.aiExplanation && (
+            <div className="text-sm text-slate-700 dark:text-slate-200">
+              {String(reportQ.data.aiExplanation).slice(0, 400)}
+              {String(reportQ.data.aiExplanation).length > 400 ? "…" : ""}
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card className="flex h-[70vh] flex-col p-0">
         <div className="flex-1 overflow-y-auto p-4">
