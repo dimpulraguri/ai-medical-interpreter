@@ -56,8 +56,8 @@ export default function MedicinesPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["meds", "schedules"] })
   });
   const logM = useMutation({
-    mutationFn: async (body: { scheduleId: string; status: "taken" | "skipped" }) =>
-      api.post("/meds/logs", { scheduleId: body.scheduleId, status: body.status, plannedAt: new Date().toISOString() }),
+    mutationFn: async (body: { scheduleId: string; status: "taken" | "skipped"; plannedAt: string }) =>
+      api.post("/meds/logs", { scheduleId: body.scheduleId, status: body.status, plannedAt: body.plannedAt }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["meds", "adherence"] })
   });
 
@@ -150,13 +150,21 @@ export default function MedicinesPage() {
                   {s.times.join(", ")} • {s.startDate} • {s.durationDays} days
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => logM.mutate({ scheduleId: s.id, status: "taken" })}>
-                  Mark taken
-                </Button>
-                <Button variant="ghost" onClick={() => logM.mutate({ scheduleId: s.id, status: "skipped" })}>
-                  Skipped
-                </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {s.times.map((t) => {
+                  const plannedAt = `${todayISO()}T${t}:00`;
+                  return (
+                    <div key={t} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 dark:border-slate-800">
+                      <span className="text-xs text-slate-500">{t}</span>
+                      <Button variant="secondary" onClick={() => logM.mutate({ scheduleId: s.id, status: "taken", plannedAt })}>
+                        Taken
+                      </Button>
+                      <Button variant="ghost" onClick={() => logM.mutate({ scheduleId: s.id, status: "skipped", plannedAt })}>
+                        Skipped
+                      </Button>
+                    </div>
+                  );
+                })}
                 <Button variant="secondary" onClick={() => toggleM.mutate(s)}>
                   {s.enabled ? "Pause" : "Enable"}
                 </Button>
