@@ -111,6 +111,95 @@ export async function doctorChatReply(input: {
   }
 }
 
+export async function reportChatReply(input: {
+  userMessage: string;
+  reportSummary?: { filename: string; createdAt: string; aiExplanation: string; extractedText: string } | null;
+  abnormalFindings?: unknown;
+}) {
+  const { userMessage, reportSummary, abnormalFindings } = input;
+
+  if (!reportSummary) {
+    return "I couldnâ€™t find a ready report. Please upload a report or select one to analyze.";
+  }
+
+  if (env.AI_MODE === "off") {
+    const err = new Error("AI is disabled by the server.");
+    (err as any).statusCode = 503;
+    throw err;
+  }
+
+  const reportContext = [
+    `Report: ${reportSummary.filename} (${reportSummary.createdAt})`,
+    reportSummary.aiExplanation ? `AI summary: ${reportSummary.aiExplanation.slice(0, 1400)}` : "",
+    reportSummary.extractedText ? `Raw report text (excerpt): ${reportSummary.extractedText.slice(0, 900)}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const abnormalText =
+    abnormalFindings != null
+      ? `Abnormal findings (may be incomplete): ${JSON.stringify(abnormalFindings).slice(0, 1000)}`
+      : "";
+
+  if (env.AI_MODE === "demo") {
+    return [
+      "Iâ€™m here to explain your report in simple language (demo mode).",
+      reportContext,
+      abnormalText ? `\n${abnormalText}` : "",
+      "\nAsk me anything about these results (e.g., â€œwhat does low hemoglobin mean?â€�).",
+      "Disclaimer: Educational information only; not medical advice."
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (env.AI_MODE === "huggingface") {
+    const system = [
+      "You are a medical-report assistant (not a doctor).",
+      "Only answer using the provided report context.",
+      "Explain in simple English, highlight highs/lows/critical, and suggest safe next steps.",
+      "Do not diagnose. Encourage seeing a clinician for urgent or unclear results."
+    ].join(" ");
+
+    const prompt = [system, reportContext, abnormalText, `USER: ${userMessage}`, "ASSISTANT:"].filter(Boolean).join("\n");
+
+    try {
+      const out = await hfGenerateText({ prompt, maxNewTokens: 350, temperature: 0.4 });
+      return out.trim() || "Iâ€™m here to explain your report. Can you rephrase your question?";
+    } catch (err: any) {
+      const detail = typeof err?.message === "string" ? err.message : "HuggingFace failed";
+      return `Iâ€™m here to explain your report (demo mode). Note: ${detail}`;
+    }
+  }
+
+  const openai = requireOpenAI();
+  const instructions = [
+    "You are a medical-report assistant (not a doctor).",
+    "Only answer using the provided report context.",
+    "Explain in simple English, highlight highs/lows/critical, and suggest safe next steps.",
+    "Do not diagnose. Encourage seeing a clinician for urgent or unclear results.",
+    reportContext,
+    abnormalText
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const res = await openai.responses.create({
+      model: env.OPENAI_MODEL,
+      instructions,
+      input: [{ role: "user", content: userMessage }],
+      temperature: 0.3
+    });
+    return (res.output_text ?? "").trim();
+  } catch (err) {
+    if (err instanceof OpenAI.APIError && err.status === 429) {
+      return "AI quota is currently unavailable. Iâ€™m in demo mode for report explanations.";
+    }
+    throw err;
+  }
+}
+
 function demoChatReply(input: {
   userMessage: string;
   context?: { recentAbnormalFindings?: unknown };

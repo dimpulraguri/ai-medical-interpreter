@@ -11,6 +11,7 @@ import { useAuth } from "@/components/AuthProvider";
 const items = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/reports", label: "Reports", icon: FileText },
+  { href: "/dashboard/report-chat", label: "Report Assistant", icon: FileText },
   { href: "/dashboard/reminders", label: "Reminders", icon: Bell },
   { href: "/dashboard/meds", label: "Medicines", icon: Pill },
   { href: "/dashboard/chat", label: "AI Doctor Chat", icon: MessageCircle },

@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { z } from "zod";
+import { isValidObjectId } from "mongoose";
 import multer from "multer";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -8,6 +10,7 @@ import { interpretMedicalReport } from "../services/reportInterpreter.js";
 import { encryptJson, decryptJson } from "../services/encryption.js";
 import { Report } from "../models/Report.js";
 import { writeAuditLog } from "../services/audit.js";
+import { reportChatReply } from "../services/chatDoctor.js";
 
 export const reportRoutes = Router();
 
@@ -140,5 +143,50 @@ reportRoutes.post(
       });
       throw err;
     }
+  })
+);
+
+reportRoutes.post(
+  "/chat",
+  requireAuth,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const body = z.object({ message: z.string().min(1).max(2000), reportId: z.string().min(1) }).parse(req.body);
+    if (!isValidObjectId(body.reportId)) return res.status(400).json({ error: "Invalid reportId" });
+
+    const rep = await Report.findOne({ _id: body.reportId, userId: req.user!.id, status: "ready" }).select({
+      abnormalFindingsEnc: 1,
+      extractedTextEnc: 1,
+      aiExplanationEnc: 1,
+      filename: 1,
+      createdAt: 1,
+      status: 1
+    });
+    if (!rep) return res.status(404).json({ error: "Report not found" });
+    if (rep.status !== "ready") return res.status(409).json({ error: "Report is still processing" });
+
+    const abnormalFindings = decryptJson(rep.abnormalFindingsEnc);
+    const aiExplanation = decryptJson<string>(rep.aiExplanationEnc) ?? "";
+    const extractedText = decryptJson<string>(rep.extractedTextEnc) ?? "";
+
+    const reply = await reportChatReply({
+      userMessage: body.message,
+      abnormalFindings,
+      reportSummary: {
+        filename: rep.filename,
+        createdAt: rep.createdAt.toISOString(),
+        aiExplanation,
+        extractedText
+      }
+    });
+
+    void writeAuditLog({
+      req,
+      event: "reports.chat",
+      status: 200,
+      userId: req.user!.id,
+      meta: { reportId: rep._id.toString(), messageLength: body.message.length }
+    });
+
+    res.json({ message: reply, createdAt: new Date().toISOString() });
   })
 );
