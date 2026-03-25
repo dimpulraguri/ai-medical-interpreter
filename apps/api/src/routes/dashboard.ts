@@ -32,8 +32,17 @@ dashboardRoutes.get(
 
 async function remindersForToday(userId: string) {
   const now = new Date();
-  const items = await Reminder.find({ userId, enabled: true }).select({ title: 1, type: 1, times: 1, frequency: 1, createdAt: 1 });
-  return items
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  const [items, schedules] = await Promise.all([
+    Reminder.find({ userId, enabled: true }).select({ title: 1, type: 1, times: 1, frequency: 1, createdAt: 1 }),
+    MedicineSchedule.find({ userId, enabled: true }).select({ name: 1, dosage: 1, times: 1, startDate: 1, durationDays: 1, enabled: 1 })
+  ]);
+
+  const reminderItems = items
     .flatMap((r) =>
       r.times.map((t) => ({ id: r._id.toString(), title: r.title, time: t, type: r.type, frequency: r.frequency, createdAt: r.createdAt }))
     )
@@ -41,7 +50,26 @@ async function remindersForToday(userId: string) {
       if (x.frequency === "weekly") return x.createdAt.getDay() === now.getDay();
       if (x.frequency === "monthly") return x.createdAt.getDate() === now.getDate();
       return true;
+    });
+
+  const medicineItems = schedules
+    .filter((s) => {
+      const start = new Date(`${s.startDate}T00:00:00`);
+      const end = new Date(start);
+      end.setDate(end.getDate() + s.durationDays);
+      const today = new Date(`${todayStr}T00:00:00`);
+      return today >= start && today < end;
     })
+    .flatMap((s) =>
+      s.times.map((t) => ({
+        id: `${s._id.toString()}_${t}`,
+        title: `${s.name} (${s.dosage})`,
+        time: t,
+        type: "medicine" as const
+      }))
+    );
+
+  return [...reminderItems, ...medicineItems]
     .sort((a, b) => a.time.localeCompare(b.time))
     .slice(0, 20)
     .map(({ id, title, time, type }) => ({ id, title, time, type }));
